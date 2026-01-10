@@ -3,17 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 大阪旅行助手</title>
+    <title>2026 大阪旅行助手整理測試版</title>
     <style>
         :root { --primary: #4f46e5; --bg: #f1f5f9; --card-bg: #ffffff; --text-main: #1e293b; --nav-bg: rgba(255, 255, 255, 0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, "Noto Sans TC", sans-serif; }
-        body { margin: 0; background-color: var(--bg); color: var(--text-main); padding-bottom: 90px; }
+        body { margin: 0; background-color: var(--bg); color: var(--text-main); padding-bottom: 110px; }
         .app-container { width: 100%; max-width: 500px; margin: 0 auto; min-height: 100vh; position: relative; }
+  /* 頁首樣式：藍色漸層與 sticky 固定頂部 */
         header { background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; padding: 25px 20px 15px; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; position: sticky; top: 0; z-index: 100; }
+
+  /* 分頁標籤樣式 (進行中/已完成) */
         .tab-container { display: flex; background: rgba(255,255,255,0.2); border-radius: 12px; padding: 4px; margin-top: 15px; }
         .tab { flex: 1; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 800; border: none; color: white; background: transparent; cursor: pointer; }
         .tab.active { background: white; color: var(--primary); }
-        .page-content { display: none; padding: 15px; animation: fadeIn 0.3s ease; }
+
+  /* 行程卡片樣式：控制圖片大小、陰影、文字排版 */
+        .page-content { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
         .page-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .card { background: var(--card-bg); border-radius: 20px; padding: 12px; margin-bottom: 12px; display: flex; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); align-items: center; cursor: pointer; }
@@ -21,11 +26,18 @@
         .card-media { position: relative; width: 70px; height: 70px; flex-shrink: 0; }
         .card-img { width: 100%; height: 100%; border-radius: 12px; object-fit: cover; background: #e2e8f0; }
         .date-badge { position: absolute; top: -5px; left: -5px; background: var(--primary); color: white; padding: 2px 6px; border-radius: 8px; font-size: 10px; font-weight: 800; }
-        .time-label { font-size: 11px; color: var(--primary); font-weight: 800; background: #eef2ff; padding: 2px 6px; border-radius: 6px; }
+
+/* 底部導覽列：修正 z-index 確保點擊得到，並適應手機安全區域 */
+
+        .time-label { font-size: 20px; color: var(--primary); font-weight: 800;
+ /*卡片內時間格式*/
+background: #eef2ff; padding: 2px 6px; border-radius: 6px; }
         nav.bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 500px; height: 75px; background: var(--nav-bg); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #e2e8f0; z-index: 1000; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 10px; font-weight: 700; flex: 1; cursor: pointer; }
         .nav-item.active { color: var(--primary); }
+/* 右下角浮動新增按鈕 (FAB) */
         .fab { position: fixed; right: 20px; bottom: 95px; width: 56px; height: 56px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; border: none; box-shadow: 0 4px 15px rgba(79,70,229,0.4); z-index: 90; }
+/* 彈窗樣式：輸入資料的介面 */
         .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: flex-end; justify-content: center; z-index: 1100; }
         .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px 20px; max-height: 90vh; overflow-y: auto; }
         input, select { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px; width: 100%; margin-bottom: 12px; font-size: 14px; outline: none; }
@@ -111,15 +123,30 @@
 </div>
 
 <script>
+    // 【7. JS: API 與全域變數設定】
     const API_URL = "https://script.google.com/macros/s/AKfycbyb1gSGdB4_OTp_Nzl699EBDaLvIAEJ1pU42wld_bxxa8Fl7fpqMEXG81mpzMpNKeOh4w/exec";
     let allData = { itinerary: [], expenses: [], files: [] }, currentTab = 'active', editingIt = null, editingEx = null;
 
+    // 【8. JS: 時間格式強力過濾器】解決 1899-12-30 的問題
+function cleanTime(t) {
+        let s = String(t || "00:00");
+        if (s.includes('T')) {
+            const dt = new Date(s);
+            if (!isNaN(dt)) {
+                return dt.getUTCHours().toString().padStart(2, '0') + ":" + 
+                       dt.getUTCMinutes().toString().padStart(2, '0');
+            }
+        }
+        return s.split(':').slice(0, 2).join(':');
+    }
+// 【9. JS: 抓取 Google Sheet 資料】
     async function fetchData() {
         try {
             const res = await fetch(API_URL);
             const data = await res.json();
             const now = new Date();
-            
+            	
+// 處理行程資料
             allData.itinerary = (data.itinerary || []).slice(1).map(row => {
                 const parts = String(row[0]).split('/');
                 const timeParts = String(row[1] || "00:00").split(':');
@@ -187,8 +214,9 @@
         };
         reader.readAsDataURL(file);
     }
-
+// 【10. JS: 渲染畫面 (Render)】將資料轉化為卡片 HTML
     function switchPage(p, el) {
+// 行程清單
         document.querySelectorAll('.page-content').forEach(pc => pc.classList.remove('active'));
         document.getElementById('page-'+p).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(ni => ni.classList.remove('active'));
@@ -197,35 +225,67 @@
         document.getElementById('fab-btn').style.display = p === 'contacts' ? 'none' : 'flex';
         document.getElementById('fab-btn').onclick = p === 'itinerary' ? () => openItineraryModal() : p === 'money' ? () => openExpenseModal() : () => openFileModal();
     }
+/** * 【功能：開啟行程彈窗】
+ * 當你點擊卡片（編輯）或是點擊右下角 + 號（新增）時會觸發
+ */
+function openItineraryModal(item = null) {
+    // 1. 紀錄目前是否正在編輯舊資料 (item 有值代表編輯，null 代表新增)
+    editingIt = item;
 
-    function openItineraryModal(item = null) {
-        editingIt = item;
-        document.getElementById('itinerary-modal').style.display = 'flex';
-        document.getElementById('it-del-btn').style.display = item ? 'block' : 'none';
-        if(item) {
-            document.getElementById('in-date').value = item.date;
-            document.getElementById('in-time').value = item.time;
-            document.getElementById('in-activity').value = item.activity;
-            document.getElementById('in-location').value = item.location;
-            document.getElementById('in-image').value = item.image;
-        } else { document.querySelectorAll('#itinerary-modal input').forEach(i => i.value = ''); }
+    // 2. 把彈窗顯示出來 (把 CSS 的 display 從 none 改成 flex)
+    document.getElementById('itinerary-modal').style.display = 'flex';
+
+    // 3. 判斷是否顯示「刪除按鈕」：只有編輯舊行程時才出現
+    document.getElementById('it-del-btn').style.display = item ? 'block' : 'none';
+
+    // 4. 填入內容
+    if (item) {
+        // 如果是編輯舊行程：把該行程的資料塞進對應的輸入框
+        document.getElementById('in-date').value = item.date;
+        document.getElementById('in-time').value = item.time;
+        document.getElementById('in-activity').value = item.activity;
+        document.getElementById('in-location').value = item.location;
+        document.getElementById('in-image').value = item.image;
+    } else {
+        // 如果是新增行程：把所有輸入框清空，讓使用者重新輸入
+        document.querySelectorAll('#itinerary-modal input').forEach(i => i.value = '');
     }
+}
 
-    async function submitItinerary(action = null) {
-        const data = { 
-            action: action || (editingIt ? 'edit' : 'add'), 
-            date: document.getElementById('in-date').value, 
-            time: document.getElementById('in-time').value, 
-            activity: document.getElementById('in-activity').value, 
-            location: document.getElementById('in-location').value, 
-            image: document.getElementById('in-image').value, 
-            oldActivity: editingIt ? editingIt.activity : null 
-        };
-        closeModals();
-        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-        setTimeout(fetchData, 1500);
-    }
+/** * 【功能：提交行程資料至雲端】
+ * 當你按下「儲存行程」或「刪除」按鈕時會觸發
+ */
+async function submitItinerary(action = null) {
+    // 1. 準備要寄出的「包裹」(資料物件)
+    const data = { 
+        // 判斷動作：手動傳入 action (如 delete)，否則根據 editingIt 判斷是 edit 還是 add
+        action: action || (editingIt ? 'edit' : 'add'), 
+        
+        // 抓取目前輸入框裡最新填寫的內容
+        date: document.getElementById('in-date').value, 
+        time: document.getElementById('in-time').value, 
+        activity: document.getElementById('in-activity').value, 
+        location: document.getElementById('in-location').value, 
+        image: document.getElementById('in-image').value, 
+        
+        // 如果是編輯，要傳送「舊的活動名稱」，雲端才能找到 Google 表單裡的哪一行要改
+        oldActivity: editingIt ? editingIt.activity : null 
+    };
 
+    // 2. 為了反應快，先關閉彈窗
+    closeModals();
+
+    // 3. 透過 fetch 真正把資料寄給 Google 表單 (API)
+    // mode: "no-cors" 是為了避免瀏覽器因為安全機制擋住請求
+    await fetch(API_URL, { 
+        method: "POST", 
+        mode: "no-cors", 
+        body: JSON.stringify(data) 
+    });
+
+    // 4. 等待 1.5 秒後重新抓取資料 (fetchData)，確保看到更新後的結果
+    setTimeout(fetchData, 1500);
+}// 【12. JS: 彈窗控制與新增功能】
     function openExpenseModal(item = null) {
         editingEx = item;
         document.getElementById('expense-modal').style.display = 'flex';
@@ -236,6 +296,7 @@
             document.getElementById('ex-cat').value = item.cat;
         } else { document.getElementById('ex-amount').value = ''; document.getElementById('ex-act').value = ''; }
     }
+// 【13. JS: 送出資料至 Google Sheet】
 
     async function submitExpense(type = null) {
         const data = { 
@@ -248,13 +309,15 @@
         };
         closeModals();
         await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) });
-        setTimeout(fetchData, 1000);
+        setTimeout(fetchData, 1000); // 延遲刷新以等待雲端更新
     }
 
+// 【14. JS: 行程分頁切換】
     function openFileModal() { document.getElementById('file-modal').style.display = 'flex'; }
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
     function setTab(t) { currentTab = t; document.getElementById('tab-active').classList.toggle('active', t==='active'); document.getElementById('tab-completed').classList.toggle('active', t==='completed'); renderAll(); }
-    window.onload = fetchData;
+    // 初始化讀取資料
+window.onload = fetchData;
 </script>
 </body>
 </html>
