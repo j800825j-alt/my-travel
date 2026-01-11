@@ -3,41 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 大阪旅行助手 - 格式終極修復版</title>
+    <title>2026 大阪旅行助手 - 排序與編輯修復版</title>
     <style>
         :root { --primary: #4f46e5; --bg: #f1f5f9; --card-bg: #ffffff; --text-main: #1e293b; --nav-bg: rgba(255, 255, 255, 0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, "Noto Sans TC", sans-serif; }
         body { margin: 0; background-color: var(--bg); color: var(--text-main); padding-bottom: 120px; }
         .app-container { width: 100%; max-width: 500px; margin: 0 auto; min-height: 100vh; position: relative; }
-        
         header { background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 100%); color: white; padding: 25px 20px 15px; border-bottom-left-radius: 25px; border-bottom-right-radius: 25px; position: sticky; top: 0; z-index: 100; }
         .tab-container { display: flex; background: rgba(255,255,255,0.2); border-radius: 12px; padding: 4px; margin-top: 15px; }
         .tab { flex: 1; padding: 10px; border-radius: 10px; font-size: 14px; font-weight: 800; border: none; color: white; background: transparent; cursor: pointer; }
         .tab.active { background: white; color: var(--primary); }
-
         .page-content { display: none; padding: 20px; animation: fadeIn 0.3s ease; }
         .page-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-        
-        .card { background: var(--card-bg); border-radius: 20px; padding: 15px; margin-bottom: 12px; display: flex; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); align-items: center; cursor: pointer; }
+        .card { background: var(--card-bg); border-radius: 20px; padding: 15px; margin-bottom: 12px; display: flex; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); align-items: center; cursor: pointer; border-left: 5px solid transparent; }
+        .card.is-active { border-left-color: var(--primary); }
         .card.completed { border-left: 6px solid #22c55e; background: #f0fdf4; }
-        
         nav.bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 500px; height: 95px; background: var(--nav-bg); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #e2e8f0; z-index: 1000; padding-bottom: 20px; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 13px; font-weight: 700; flex: 1; cursor: pointer; }
         .nav-item i { font-size: 28px; margin-bottom: 5px; }
         .nav-item.active { color: var(--primary); }
-
         .fab { position: fixed; right: 20px; bottom: 115px; width: 64px; height: 64px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 26px; border: none; box-shadow: 0 6px 20px rgba(79,70,229,0.4); z-index: 90; }
-
         .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: flex-end; justify-content: center; z-index: 1100; }
         .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 30px 20px; max-height: 90vh; overflow-y: auto; }
         input, select { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; width: 100%; margin-bottom: 15px; font-size: 16px; outline: none; }
         .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; font-size: 16px; }
-
-        /* 清單樣式優化 */
-        .check-content { flex: 1; display: flex; flex-direction: column; }
-        .check-title { font-size: 16px; font-weight: 600; color: var(--text-main); }
-        .check-owner { font-size: 12px; color: var(--primary); font-weight: bold; margin-top: 2px; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -58,30 +48,34 @@
     <main id="page-itinerary" class="page-content active"><div id="itinerary-list">讀取中...</div></main>
     <main id="page-money" class="page-content">
         <div style="background:#1e293b; color:white; padding:20px; border-radius:20px; margin-bottom:15px;">
-            <small>總支出 (匯率 0.21)</small>
+            <small>總支出預算</small>
             <h2 style="margin:5px 0;">¥ <span id="total-jpy">0</span></h2>
             <div style="color:#22c55e; font-weight:bold;">≈ NT$ <span id="total-twd">0</span></div>
         </div>
         <div id="expense-list"></div>
     </main>
     <main id="page-check" class="page-content"><div id="check-list"></div></main>
-    <main id="page-files" class="page-content"><div id="file-list"></div></main>
+    <main id="page-files" class="page-content">
+        <div class="card" onclick="window.open('https://drive.google.com/drive/folders/1_uH76mAtBVkm8wttpyeG0T9g5st6jDm4')">
+            <i class="fas fa-folder-open" style="font-size:24px; color:#f59e0b;"></i>
+            <b>雲端文件夾</b>
+        </div>
+    </main>
 
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchPage('itinerary', this)"><i class="fas fa-calendar-alt"></i><span>行程</span></div>
         <div class="nav-item" onclick="switchPage('money', this)"><i class="fas fa-yen-sign"></i><span>記帳</span></div>
         <div class="nav-item" onclick="switchPage('check', this)"><i class="fas fa-check-square"></i><span>清單</span></div>
         <div class="nav-item" onclick="switchPage('files', this)"><i class="fas fa-file-alt"></i><span>文件</span></div>
-        <div class="nav-item" onclick="switchPage('contacts', this)"><i class="fas fa-address-book"></i><span>聯絡</span></div>
     </nav>
 
     <button id="fab-btn" class="fab" onclick="openItineraryModal()"><i class="fas fa-plus"></i></button>
 
     <div id="itinerary-modal" class="modal"><div class="modal-content">
         <h3 id="modal-title">行程編輯</h3>
-        <input id="in-date" type="text" placeholder="日期 (如: 1/10)">
+        <input id="in-date" type="text" placeholder="日期 (如: 1/11)">
         <input id="in-time" type="text" placeholder="時間 (如: 12:00)">
-        <input id="in-activity" type="text" placeholder="活動">
+        <input id="in-activity" type="text" placeholder="活動名稱">
         <input id="in-location" type="text" placeholder="地點">
         <input id="in-image" type="text" placeholder="圖片連結">
         <div style="display:flex; gap:10px;">
@@ -93,7 +87,7 @@
 
     <div id="expense-modal" class="modal"><div class="modal-content">
         <h3>記帳編輯</h3>
-        <input id="ex-amount" type="number" placeholder="日幣金額">
+        <input id="ex-amount" type="number" placeholder="金額 (JPY)">
         <input id="ex-act" type="text" placeholder="項目內容">
         <select id="ex-cat"><option value="餐飲">🍱 餐飲</option><option value="交通">🚃 交通</option><option value="購物">🛍️ 購物</option><option value="其他">❓ 其他</option></select>
         <div style="display:flex; gap:10px;">
@@ -102,30 +96,18 @@
         </div>
         <button onclick="closeModals()" style="width:100%; background:none; border:none; color:#94a3b8; margin-top:15px;">取消</button>
     </div></div>
-
-    <div id="check-modal" class="modal"><div class="modal-content">
-        <h3>清單編輯</h3>
-        <input id="ck-item" type="text" placeholder="內容">
-        <input id="ck-owner" type="text" placeholder="負責人">
-        <div style="display:flex; gap:10px;">
-            <button id="ck-del-btn" onclick="submitCheck('deleteCheck')" style="flex:1; background:#fee2e2; color:#ef4444; border:none; padding:15px; border-radius:12px; font-weight:bold;">刪除</button>
-            <button class="btn-primary" style="flex:2;" onclick="submitCheck()">儲存</button>
-        </div>
-        <button onclick="closeModals()" style="width:100%; background:none; border:none; color:#94a3b8; margin-top:15px;">取消</button>
-    </div></div>
 </div>
 
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyb1gSGdB4_OTp_Nzl699EBDaLvIAEJ1pU42wld_bxxa8Fl7fpqMEXG81mpzMpNKeOh4w/exec";
     const RATE = 0.21;
-    let allData = { itinerary: [], expenses: [], files: [], checklist: [] }, 
-        currentTab = 'active', editingIt = null, editingEx = null, editingCk = null;
+    let allData = { itinerary: [], expenses: [], checklist: [] }, 
+        currentTab = 'active', editingIt = null, editingEx = null;
 
-    // 【核心修正：日期與時間格式化】
     function formatSafeDate(val) {
         if (!val) return "";
         let d = new Date(val);
-        if (isNaN(d.getTime())) return val; // 如果原本就是 "1/10" 這種字串就直接回傳
+        if (isNaN(d.getTime())) return String(val);
         return `${d.getMonth() + 1}/${d.getDate()}`;
     }
 
@@ -134,127 +116,193 @@
         let d = new Date(val);
         if (isNaN(d.getTime())) {
             const match = String(val).match(/(\d{1,2}):(\d{1,2})/);
-            return match ? `${match[1].padStart(2, '0')}:${match[2].padStart(2, '0')}` : val;
+            return match ? `${match[1].padStart(2, '0')}:${match[2].padStart(2, '0')}` : String(val);
         }
         return d.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
     }
 
     async function fetchData() {
-        try {
-            const res = await fetch(API_URL);
-            const data = await res.json();
-            const now = new Date();
-            
-            allData.itinerary = (data.itinerary || []).slice(1).map(row => {
-                const dateStr = formatSafeDate(row[0]);
-                const timeStr = formatSafeTime(row[1]);
-                const parts = dateStr.split('/');
-                const timeParts = timeStr.split(':');
-                const d = new Date(2026, parseInt(parts[0])-1, parseInt(parts[1]), parseInt(timeParts[0]), parseInt(timeParts[1]));
-                return { date: dateStr, time: timeStr, activity: row[2], location: row[3], image: row[4], dateObj: d, isPast: d < now };
-            }).sort((a,b) => a.dateObj - b.dateObj);
-            
-            allData.expenses = (data.expenses || []).slice(1).reverse();
-            allData.checklist = (data.checklist || []).slice(1);
-            renderAll();
-        } catch (e) { console.error(e); }
-    }
+    document.getElementById('itinerary-list').innerHTML = "讀取中...";
+    try {
+        const res = await fetch(API_URL + "?t=" + new Date().getTime());
+        const data = await res.json();
+        const now = new Date();
+        
+        if (!data || !data.itinerary) throw new Error("No data");
 
+        allData.itinerary = data.itinerary.slice(1)
+            .filter(row => row && row[2]) // 只要有「活動名稱」就一定要顯示
+            .map(row => {
+                let dStr = "";
+                let tStr = "";
+                let sortScore = 99999999; // 預設給一個極大值，讓沒日期的排最後面
+
+                // 1. 處理日期與時間（修復 1899 與 格式問題）
+                const processDateTime = (val, isTime) => {
+                    if (!val) return "";
+                    let d = new Date(val);
+                    if (isNaN(d.getTime())) return String(val);
+                    
+                    // 如果是 Google 的 1899 預設日期，則只取時間
+                    if (d.getFullYear() < 1970 && isTime) {
+                        return d.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                    }
+                    if (isTime) return d.toLocaleTimeString('zh-TW', { hour12: false, hour: '2-digit', minute: '2-digit' });
+                    return (d.getMonth() + 1) + "/" + d.getDate();
+                };
+
+                // 判斷原始資料是否為日期格式
+                dStr = processDateTime(row[0], false);
+                tStr = processDateTime(row[1], true);
+
+                // 2. 計算排序分數
+                const dMatch = dStr.match(/(\d+)\/(\d+)/);
+                const tMatch = tStr.match(/(\d+):(\d+)/);
+                
+                if (dMatch) {
+                    const m = dMatch[1].padStart(2, '0');
+                    const d = dMatch[2].padStart(2, '0');
+                    const hh = tMatch ? tMatch[1].padStart(2, '0') : "00";
+                    const mm = tMatch ? tMatch[2].padStart(2, '0') : "00";
+                    sortScore = parseInt(m + d + hh + mm);
+                }
+
+                // 用於判斷已完成（若沒日期就當作尚未完成）
+                let isPast = false;
+                if (dMatch) {
+                    const h = tMatch ? parseInt(tMatch[1]) : 0;
+                    const min = tMatch ? parseInt(tMatch[2]) : 0;
+                    const dObj = new Date(2026, parseInt(dMatch[1])-1, parseInt(dMatch[2]), h, min);
+                    isPast = dObj < now;
+                }
+
+                return { 
+                    date: dStr || "待定", 
+                    time: tStr || "未定", 
+                    activity: row[2], 
+                    location: row[3] || "未定", 
+                    image: row[4] || "", 
+                    sortScore: sortScore, 
+                    isPast: isPast 
+                };
+            })
+            .sort((a, b) => a.sortScore - b.sortScore);
+        
+        allData.expenses = (data.expenses || []).slice(1).reverse();
+        allData.checklist = (data.checklist || []).slice(1);
+        renderAll();
+    } catch (e) { 
+        console.error(e);
+        document.getElementById('itinerary-list').innerHTML = "載入失敗：" + e.message;
+    }
+}
     function renderAll() {
         // 行程渲染
-        document.getElementById('itinerary-list').innerHTML = allData.itinerary.filter(i => currentTab === 'active' ? !i.isPast : i.isPast).map(i => `
-            <div class="card ${i.isPast ? 'is-gray' : ''}" onclick='openItineraryModal(${JSON.stringify(i)})'>
+        const list = allData.itinerary.filter(i => currentTab === 'active' ? !i.isPast : i.isPast);
+        document.getElementById('itinerary-list').innerHTML = list.map(i => `
+            <div class="card" onclick='openItineraryModal(${JSON.stringify(i)})'>
                 <div style="width:70px; height:70px; position:relative; flex-shrink:0;">
                     <div style="position:absolute; top:-5px; left:-5px; background:var(--primary); color:white; padding:2px 6px; border-radius:8px; font-size:10px; font-weight:bold; z-index:5;">${i.date}</div>
-                    <img src="${i.image || 'https://via.placeholder.com/70'}" style="width:100%; height:100%; border-radius:12px; object-fit:cover;">
+                    <img src="${i.image || 'https://via.placeholder.com/70/4f46e5/ffffff?text=OSAKA'}" style="width:100%; height:100%; border-radius:12px; object-fit:cover;">
                 </div>
                 <div style="flex:1;">
                     <div style="display:flex; justify-content:space-between; align-items:start;">
                         <b style="font-size:16px;">${i.activity}</b>
                         <span style="color:var(--primary); font-weight:800; font-size:18px;">${i.time}</span>
                     </div>
-                    <small style="color:#94a3b8; display:block; margin-top:5px;" onclick="event.stopPropagation(); window.open('https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent('${i.location}'))">
-                        <i class="fas fa-map-marker-alt"></i> ${i.location}
-                    </small>
+                    <small style="color:#94a3b8;"><i class="fas fa-map-marker-alt"></i> ${i.location}</small>
                 </div>
-            </div>`).join('');
-        
+            </div>`).join('') || `<div style="text-align:center; padding:40px; color:#94a3b8;">目前無行程資料</div>`;
+
         // 記帳渲染
         const total = allData.expenses.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
         document.getElementById('total-jpy').innerText = total.toLocaleString();
         document.getElementById('total-twd').innerText = Math.round(total * RATE).toLocaleString();
         document.getElementById('expense-list').innerHTML = allData.expenses.map(e => `
-            <div class="card" style="justify-content:space-between;" onclick='openExpenseModal({date:"${e[0]}", cat:"${e[1]}", act:"${e[2]}", amt:${e[3]}})'>
-                <div><b>${e[2]}</b><br><small>${e[1]} • ${formatSafeDate(e[0])}</small></div>
+            <div class="card" style="justify-content:space-between;" onclick='openExpenseModal({cat:"${e[1]}", act:"${e[2]}", amt:${e[3]}})'>
+                <div><b>${e[2]}</b><br><small>${e[1]}</small></div>
                 <b>¥${e[3]}</b>
             </div>`).join('');
 
-        // 清單渲染 (修正文字格式與對齊)
+        // 清單渲染
         document.getElementById('check-list').innerHTML = allData.checklist.map(c => {
             const isDone = String(c[2]).toUpperCase() === 'TRUE';
-            return `<div class="card ${isDone ? 'completed' : ''}" style="gap:15px;">
-                <input type="checkbox" style="width:22px; height:22px; flex-shrink:0;" ${isDone ? 'checked' : ''} onchange="toggleCheck('${c[0]}', ${!isDone})">
-                <div class="check-content" onclick='openCheckModal({item:"${c[0]}", owner:"${c[1]}"})'>
-                    <span class="check-title" style="${isDone ? 'text-decoration:line-through; color:#94a3b8;' : ''}">${c[0]}</span>
-                    <span class="check-owner">👤 ${c[1] || '待定'}</span>
+            return `<div class="card ${isDone ? 'completed' : ''}">
+                <input type="checkbox" style="width:20px; height:20px;" ${isDone ? 'checked' : ''} onchange="toggleCheck('${c[0]}', ${!isDone})">
+                <div style="flex:1; margin-left:10px;">
+                    <b style="${isDone?'text-decoration:line-through;color:#94a3b8;':''}">${c[0]}</b>
+                    <div style="font-size:12px; color:var(--primary);">👤 ${c[1] || '待定'}</div>
                 </div>
-                <i class="fas fa-edit" style="color:#cbd5e1; margin-left:auto;" onclick='openCheckModal({item:"${c[0]}", owner:"${c[1]}"})'></i>
             </div>`;
         }).join('');
     }
 
-    // --- 提交與控制邏輯 ---
     async function submitItinerary(type) {
         let action = (type === 'delete') ? 'delete' : (editingIt ? 'edit' : 'add');
-        const data = { action: action, date: document.getElementById('in-date').value, time: document.getElementById('in-time').value, activity: document.getElementById('in-activity').value, location: document.getElementById('in-location').value, image: document.getElementById('in-image').value, oldActivity: editingIt ? editingIt.activity : null };
-        closeModals(); await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }); setTimeout(fetchData, 1200);
+        const data = { 
+            action: action, 
+            date: document.getElementById('in-date').value, 
+            time: document.getElementById('in-time').value, 
+            activity: document.getElementById('in-activity').value, 
+            location: document.getElementById('in-location').value, 
+            image: document.getElementById('in-image').value, 
+            oldActivity: editingIt ? editingIt.activity : null 
+        };
+        closeModals(); 
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }); 
+        setTimeout(fetchData, 1500);
     }
 
     async function submitExpense(type = null) {
-        const data = { type: type || (editingEx ? 'editExpense' : 'expense'), date: new Date().toLocaleDateString(), category: document.getElementById('ex-cat').value, activity: document.getElementById('ex-act').value, amount: document.getElementById('ex-amount').value, oldActivity: editingEx ? editingEx.act : null };
-        closeModals(); await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }); setTimeout(fetchData, 1000);
+        const data = { 
+            type: type || (editingEx ? 'editExpense' : 'expense'), 
+            category: document.getElementById('ex-cat').value, 
+            activity: document.getElementById('ex-act').value, 
+            amount: document.getElementById('ex-amount').value, 
+            oldActivity: editingEx ? editingEx.act : null 
+        };
+        closeModals(); 
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }); 
+        setTimeout(fetchData, 1500);
     }
 
     async function toggleCheck(item, status) {
         await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ type: 'toggleCheck', item: item, status: status }) });
-        allData.checklist = allData.checklist.map(c => c[0] === item ? [c[0], c[1], status ? 'TRUE' : 'FALSE'] : c);
-        renderAll();
+        setTimeout(fetchData, 500);
     }
 
-    async function submitCheck(action = null) {
-        const data = { type: action || (editingCk ? 'editCheck' : 'addCheck'), item: document.getElementById('ck-item').value, owner: document.getElementById('ck-owner').value, oldItem: editingCk ? editingCk.item : null };
-        closeModals(); await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(data) }); setTimeout(fetchData, 1000);
-    }
-
-    // 通用開關
     function switchPage(p, el) {
         document.querySelectorAll('.page-content').forEach(pc => pc.classList.remove('active'));
         document.getElementById('page-'+p).classList.add('active');
         document.querySelectorAll('.nav-item').forEach(ni => ni.classList.remove('active'));
         el.classList.add('active');
-        document.getElementById('page-title').innerText = {itinerary:'行程規劃', money:'記帳本', check:'清單', files:'文件', contacts:'聯絡'}[p];
+        document.getElementById('page-title').innerText = {itinerary:'行程規劃', money:'記帳本', check:'清單', files:'文件'}[p];
         document.getElementById('itinerary-tabs').style.display = p === 'itinerary' ? 'flex' : 'none';
-        document.getElementById('fab-btn').style.display = (p === 'contacts' || p === 'files') ? 'none' : 'flex';
-        document.getElementById('fab-btn').onclick = { itinerary: () => openItineraryModal(), money: () => openExpenseModal(), check: () => openCheckModal() }[p];
+        document.getElementById('fab-btn').style.display = p === 'files' ? 'none' : 'flex';
+        document.getElementById('fab-btn').onclick = { itinerary: () => openItineraryModal(), money: () => openExpenseModal(), check: () => {} }[p];
     }
+
     function openItineraryModal(item = null) {
-        editingIt = item; document.getElementById('itinerary-modal').style.display = 'flex';
+        editingIt = item; 
+        document.getElementById('itinerary-modal').style.display = 'flex';
+        document.getElementById('modal-title').innerText = item ? "編輯行程" : "新增行程";
+        document.getElementById('it-del-btn').style.display = item ? "block" : "none";
         document.getElementById('in-date').value = item ? item.date : '';
         document.getElementById('in-time').value = item ? item.time : '';
         document.getElementById('in-activity').value = item ? item.activity : '';
         document.getElementById('in-location').value = item ? item.location : '';
         document.getElementById('in-image').value = item ? item.image : '';
     }
+
     function openExpenseModal(item = null) {
-        editingEx = item; document.getElementById('expense-modal').style.display = 'flex';
+        editingEx = item; 
+        document.getElementById('expense-modal').style.display = 'flex';
+        document.getElementById('ex-del-btn').style.display = item ? "block" : "none";
         document.getElementById('ex-amount').value = item ? item.amt : '';
         document.getElementById('ex-act').value = item ? item.act : '';
+        document.getElementById('ex-cat').value = item ? item.cat : '餐飲';
     }
-    function openCheckModal(item = null) {
-        editingCk = item; document.getElementById('check-modal').style.display = 'flex';
-        document.getElementById('ck-item').value = item ? item.item : '';
-        document.getElementById('ck-owner').value = item ? item.owner : '';
-    }
+
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display = 'none'); }
     function setTab(t) { currentTab = t; document.getElementById('tab-active').classList.toggle('active', t==='active'); document.getElementById('tab-completed').classList.toggle('active', t==='completed'); renderAll(); }
     window.onload = fetchData;
