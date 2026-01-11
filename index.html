@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>2026 大阪旅行助手 - 清單修復版</title>
+    <title>2026 大阪旅行助手 - 完美修復版</title>
     <style>
         :root { --primary: #4f46e5; --bg: #f1f5f9; --card-bg: #ffffff; --text-main: #1e293b; --nav-bg: rgba(255, 255, 255, 0.95); }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; font-family: -apple-system, "Noto Sans TC", sans-serif; }
@@ -17,24 +17,18 @@
         .page-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
         
-        /* 卡片格式修正 */
-        .card { background: var(--card-bg); border-radius: 18px; padding: 15px; margin-bottom: 12px; display: flex; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); align-items: center; cursor: pointer; border-left: 5px solid transparent; }
-        .card.completed { border-left: 6px solid #22c55e; background: #f8fafc; opacity: 0.8; }
+        .card { background: var(--card-bg); border-radius: 18px; padding: 15px; margin-bottom: 12px; display: flex; gap: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); align-items: center; cursor: pointer; border-left: 5px solid transparent; transition: 0.3s; }
+        .card.completed { border-left: 6px solid #94a3b8; background: #f1f5f9; opacity: 0.6; }
         
-        /* Checkbox 樣式 */
         input[type="checkbox"] { width: 22px; height: 22px; cursor: pointer; flex-shrink: 0; accent-color: var(--primary); }
-
         nav.bottom-nav { position: fixed; bottom: 0; width: 100%; max-width: 500px; height: 90px; background: var(--nav-bg); backdrop-filter: blur(10px); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid #e2e8f0; z-index: 1000; padding-bottom: 15px; }
         .nav-item { display: flex; flex-direction: column; align-items: center; color: #94a3b8; font-size: 12px; font-weight: 700; flex: 1; cursor: pointer; }
-        .nav-item i { font-size: 24px; margin-bottom: 5px; }
         .nav-item.active { color: var(--primary); }
-        
         .fab { position: fixed; right: 20px; bottom: 110px; width: 60px; height: 60px; background: var(--primary); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; border: none; box-shadow: 0 6px 20px rgba(79,70,229,0.4); z-index: 99; }
-        
         .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.7); display: none; align-items: flex-end; justify-content: center; z-index: 1100; }
         .modal-content { background: white; width: 100%; max-width: 500px; border-top-left-radius: 30px; border-top-right-radius: 30px; padding: 25px; max-height: 85vh; overflow-y: auto; }
         input, select { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 14px; width: 100%; margin-bottom: 12px; font-size: 16px; outline: none; background: #f8fafc; }
-        .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; font-size: 16px; }
+        .btn-primary { background: var(--primary); color: white; border: none; padding: 16px; border-radius: 12px; font-weight: 800; width: 100%; cursor: pointer; }
     </style>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -79,7 +73,7 @@
     <button id="fab-btn" class="fab" onclick="openItineraryModal()"><i class="fas fa-plus"></i></button>
 
     <div id="itinerary-modal" class="modal"><div class="modal-content">
-        <h3 id="it-modal-title">編輯行程</h3>
+        <h3 id="it-modal-title">行程編輯</h3>
         <input id="in-date" type="text" placeholder="日期 (1/11)">
         <input id="in-time" type="text" placeholder="時間 (12:00)">
         <input id="in-activity" type="text" placeholder="活動項目">
@@ -94,7 +88,7 @@
 
     <div id="expense-modal" class="modal"><div class="modal-content">
         <h3>記帳管理</h3>
-        <input id="ex-twd" type="number" placeholder="輸入台幣自動換算" oninput="document.getElementById('ex-amount').value=Math.round(this.value/0.21)">
+        <input id="ex-twd" type="number" placeholder="輸入台幣自動換算" oninput="document.getElementById('ex-amount').value=Math.round(this.value/0.21) || ''">
         <input id="ex-amount" type="number" placeholder="日幣金額 (JPY)">
         <input id="ex-act" type="text" placeholder="消費內容">
         <select id="ex-cat"><option value="餐飲">🍱 餐飲</option><option value="交通">🚃 交通</option><option value="購物">🛍️ 購物</option><option value="其他">❓ 其他</option></select>
@@ -119,7 +113,6 @@
 
 <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbyb1gSGdB4_OTp_Nzl699EBDaLvIAEJ1pU42wld_bxxa8Fl7fpqMEXG81mpzMpNKeOh4w/exec";
-    const RATE = 0.21;
     let allData = { itinerary: [], expenses: [], checklist: [] }, currentTab = 'active', editingIt = null, editingEx = null, editingCk = null;
 
     async function fetchData() {
@@ -144,13 +137,17 @@
             }).sort((a,b) => a.sortScore - b.sortScore);
             
             allData.expenses = (data.expenses || []).slice(1).reverse();
-            allData.checklist = (data.checklist || []).slice(1);
+            // 清單排序邏輯：未完成在排前面，已完成排後面
+            allData.checklist = (data.checklist || []).slice(1).sort((a, b) => {
+                const doneA = String(a[2]).toUpperCase() === 'TRUE';
+                const doneB = String(b[2]).toUpperCase() === 'TRUE';
+                return doneA - doneB;
+            });
             renderAll();
         } catch (e) { console.error(e); }
     }
 
     function renderAll() {
-        // 行程
         const itList = allData.itinerary.filter(i => currentTab === 'active' ? !i.isPast : i.isPast);
         document.getElementById('itinerary-list').innerHTML = itList.map(i => `
             <div class="card" onclick='openItineraryModal(${JSON.stringify(i)})'>
@@ -164,17 +161,15 @@
                 </div>
             </div>`).join('');
 
-        // 記帳
         const total = allData.expenses.reduce((s, r) => s + (parseFloat(r[3]) || 0), 0);
         document.getElementById('total-jpy').innerText = total.toLocaleString();
-        document.getElementById('total-twd').innerText = Math.round(total * RATE).toLocaleString();
+        document.getElementById('total-twd').innerText = Math.round(total * 0.21).toLocaleString();
         document.getElementById('expense-list').innerHTML = allData.expenses.map(e => `
             <div class="card" style="justify-content:space-between;" onclick='openExpenseModal({cat:"${e[1]}", act:"${e[2]}", amt:${e[3]}})'>
                 <div><b>${e[2]}</b><br><small>${e[1]}</small></div>
-                <div style="text-align:right;"><b>¥${(parseFloat(e[3])||0).toLocaleString()}</b><br><small style="color:#94a3b8; font-size:11px;">≈ NT$${Math.round(e[3]*RATE)}</small></div>
+                <div style="text-align:right;"><b>¥${(parseFloat(e[3])||0).toLocaleString()}</b><br><small style="color:#94a3b8; font-size:11px;">≈ NT$${Math.round(e[3]*0.21)}</small></div>
             </div>`).join('');
 
-        // 清單 (修正排版與編輯點擊)
         document.getElementById('check-list').innerHTML = allData.checklist.map(c => {
             const isDone = String(c[2]).toUpperCase()==='TRUE';
             return `<div class="card ${isDone?'completed':''}" onclick="openCheckModal('${c[0]}', '${c[1]}')">
@@ -183,28 +178,44 @@
                     <b style="${isDone?'text-decoration:line-through;color:#94a3b8;':''}">${c[0]}</b>
                     <div style="font-size:12px; color:var(--primary);">👤 ${c[1]||'待定'}</div>
                 </div>
-                <i class="fas fa-chevron-right" style="color:#e2e8f0; font-size:12px;"></i>
+                <i class="fas fa-edit" style="color:#cbd5e1;"></i>
             </div>`;
         }).join('');
     }
 
-    function switchPage(p, el) {
-        document.querySelectorAll('.page-content').forEach(pc => pc.classList.remove('active'));
-        document.getElementById('page-'+p).classList.add('active');
-        document.querySelectorAll('.nav-item').forEach(ni => ni.classList.remove('active'));
-        el.classList.add('active');
-        document.getElementById('page-title').innerText = {itinerary:'行程規劃', money:'記帳本', check:'清單', files:'文件庫'}[p];
-        document.getElementById('itinerary-tabs').style.display = p === 'itinerary' ? 'flex' : 'none';
-        const fab = document.getElementById('fab-btn');
-        fab.style.display = p === 'files' ? 'none' : 'flex';
-        fab.onclick = p==='itinerary' ? openItineraryModal : (p==='money' ? openExpenseModal : () => openCheckModal());
+    // --- 彈窗處理 (修復 undefined) ---
+    function openItineraryModal(i=null) { 
+        editingIt=i; 
+        document.getElementById('itinerary-modal').style.display='flex'; 
+        document.getElementById('it-del-btn').style.display=i?"block":"none"; 
+        document.getElementById('in-date').value=i?i.date:''; 
+        document.getElementById('in-time').value=i?i.time:''; 
+        document.getElementById('in-activity').value=i?i.activity:''; 
+        document.getElementById('in-location').value=i?i.location:''; 
+        document.getElementById('in-image').value=i?i.image:''; 
     }
 
-    function openItineraryModal(i=null) { editingIt=i; document.getElementById('itinerary-modal').style.display='flex'; document.getElementById('it-del-btn').style.display=i?"block":"none"; document.getElementById('in-date').value=i?i.date:''; document.getElementById('in-time').value=i?i.time:''; document.getElementById('in-activity').value=i?i.activity:''; document.getElementById('in-location').value=i?i.location:''; document.getElementById('in-image').value=i?i.image:''; }
-    function openExpenseModal(e=null) { editingEx=e; document.getElementById('expense-modal').style.display='flex'; document.getElementById('ex-del-btn').style.display=e?"block":"none"; document.getElementById('ex-amount').value=e?e.amt:''; document.getElementById('ex-act').value=e?e.act:''; document.getElementById('ex-cat').value=e?e.cat:'餐飲'; document.getElementById('ex-twd').value=''; }
-    function openCheckModal(item='', owner='') { editingCk=item; document.getElementById('check-modal').style.display='flex'; document.getElementById('ck-modal-title').innerText=item?"編輯清單":"新增項目"; document.getElementById('ck-del-btn').style.display=item?"block":"none"; document.getElementById('ck-item').value=item; document.getElementById('ck-owner').value=owner; }
+    function openExpenseModal(e=null) { 
+        editingEx=e; 
+        document.getElementById('expense-modal').style.display='flex'; 
+        document.getElementById('ex-del-btn').style.display=e?"block":"none"; 
+        document.getElementById('ex-amount').value=e?e.amt:''; 
+        document.getElementById('ex-act').value=e?e.act:''; 
+        document.getElementById('ex-cat').value=e?e.cat:'餐飲'; 
+        document.getElementById('ex-twd').value=''; 
+    }
+
+    function openCheckModal(item='', owner='') { 
+        editingCk=item; 
+        document.getElementById('check-modal').style.display='flex'; 
+        document.getElementById('ck-del-btn').style.display=item?"block":"none"; 
+        document.getElementById('ck-item').value=item || ''; 
+        document.getElementById('ck-owner').value=owner || ''; 
+    }
+
     function closeModals() { document.querySelectorAll('.modal').forEach(m => m.style.display='none'); }
 
+    // --- 資料提交 ---
     async function submitItinerary(type) { 
         let action = type==='delete'?'delete':(editingIt?'edit':'add');
         const data = { action, date: document.getElementById('in-date').value, time: document.getElementById('in-time').value, activity: document.getElementById('in-activity').value, location: document.getElementById('in-location').value, image: document.getElementById('in-image').value, oldActivity: editingIt?editingIt.activity:null };
@@ -217,11 +228,32 @@
     async function submitCheck() {
         const item = document.getElementById('ck-item').value, owner = document.getElementById('ck-owner').value;
         if(!item) return; closeModals(); 
-        const type = editingCk ? 'editCheck' : 'addCheck'; // 需確認後端有無 editCheck，若無則先 add 再手動刪除
+        const type = editingCk ? 'editCheck' : 'addCheck'; 
         await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ type, item, owner, oldItem: editingCk }) }); setTimeout(fetchData, 1200);
     }
-    async function deleteCheck() { if(!editingCk) return; closeModals(); await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ type: 'deleteCheck', item: editingCk }) }); setTimeout(fetchData, 1200); }
-    async function toggleCheck(item, status) { await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ type: 'toggleCheck', item, status }) }); setTimeout(fetchData, 500); }
+    async function deleteCheck() { 
+        if(!editingCk) return; 
+        if(!confirm("確定要刪除此清單項目嗎？")) return;
+        closeModals(); 
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ type: 'deleteCheck', item: editingCk }) }); 
+        setTimeout(fetchData, 1200); 
+    }
+    async function toggleCheck(item, status) { 
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify({ type: 'toggleCheck', item, status }) }); 
+        setTimeout(fetchData, 500); 
+    }
+
+    function switchPage(p, el) {
+        document.querySelectorAll('.page-content').forEach(pc => pc.classList.remove('active'));
+        document.getElementById('page-'+p).classList.add('active');
+        document.querySelectorAll('.nav-item').forEach(ni => ni.classList.remove('active'));
+        el.classList.add('active');
+        document.getElementById('page-title').innerText = {itinerary:'行程規劃', money:'記帳本', check:'清單', files:'文件庫'}[p];
+        document.getElementById('itinerary-tabs').style.display = p === 'itinerary' ? 'flex' : 'none';
+        const fab = document.getElementById('fab-btn');
+        fab.style.display = p === 'files' ? 'none' : 'flex';
+        fab.onclick = p==='itinerary' ? () => openItineraryModal() : (p==='money' ? () => openExpenseModal() : () => openCheckModal());
+    }
     function setTab(t) { currentTab=t; document.getElementById('tab-active').classList.toggle('active', t==='active'); document.getElementById('tab-completed').classList.toggle('active', t==='completed'); renderAll(); }
     window.onload = fetchData;
 </script>
